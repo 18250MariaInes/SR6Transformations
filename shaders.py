@@ -331,4 +331,23 @@ def checkered(render, **kwargs):
         return r,g,b
     else:
         return 0,0,0
+ 
+ #shader para ejemplo de Carlos
+def unlit(render, **kwargs):
+    u, v, w = kwargs['baryCoords']
+    tax, tbx, tcx, tay, tby, tcy = kwargs['texCoords']
+    b, g, r = kwargs['color']
 
+    b /= 255
+    g /= 255
+    r /= 255
+
+    if render.active_texture:
+        tx = tax * u + tbx * v + tcx * w
+        ty = tay * u + tby * v + tcy * w
+        texColor = render.active_texture.getColor(tx,ty)
+        b *= texColor[0] / 255
+        g *= texColor[1] / 255
+        r *= texColor[2] / 255
+
+    return r, g, b

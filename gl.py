@@ -8,6 +8,8 @@ Funciones
 import struct
 from obj import Obj
 import random
+from numpy import matrix, cos, sin
+import numpy as np
 
 
 def char(c):
@@ -348,32 +350,18 @@ class Render(object):
                     
                     if z > self.zbuffer[y][x]:
                         
-                        """b, g , r = colorest or sef.curr_color
-                        b /= 255
-                        g /= 255
-                        r /= 255
-
-                        b *= intensity
-                        g *= intensity
-                        r *= intensity
-                        #misma operacion de coordenadas bc cuando hay textura en eje x y y
-                        if self.active_texture:
-                            tx = tax * u + tbx * v + tcx * w
-                            ty = tay * u + tby * v + tcy * w
-
-                            texColor = self.active_texture.getColor(tx, ty)
-                            b *= texColor[0] / 255
-                            g *= texColor[1] / 255
-                            r *= texColor[2] / 255"""
+                        if self.active_shader:
                         
-                        r, g, b = self.active_shader(
-                            self,
-                            verts=(Ax, Bx, Cx, Ay, By, Cy, Az, Bz, Cz),
-                            baryCoords=(u,v,w),
-                            texCoords=(tax, tbx, tcx, tay, tby, tcy),
-                            normals=normals,
-                            color = colorest or self.curr_color,
-                            coordy=(y,x))
+                            r, g, b = self.active_shader(
+                                self,
+                                verts=(Ax, Bx, Cx, Ay, By, Cy, Az, Bz, Cz),
+                                baryCoords=(u,v,w),
+                                texCoords=(tax, tbx, tcx, tay, tby, tcy),
+                                normals=normals,
+                                color = colorest or self.curr_color,
+                                coordy=(y,x))
+                        else:
+                            b, g, r = colorest or self.curr_color
                         
                        
 
@@ -421,11 +409,94 @@ class Render(object):
     def dot(self, normal, lightx, lighty, lightz):
         return (normal[0]*lightx+normal[1]*lighty+normal[2]*lightz)
 
-    def loadModel(self, filename, translate, scale, isWireframe = False): #funcion para crear modelo Obj
+    def multiplicacion(self, matriz1, matriz2, c1, f1, c2, f2): #función para multiplicar matrices
+        matriz3 = []
+        for i in range(f1):
+            matriz3.append( [0] * c2 )
+
+        for i in range(f1):
+            for j in range(c2):
+                for k in range(f2):
+                    numf=matriz1[i][k] * matriz2[k][j]
+                    matriz3[i][j] += numf
+                    
+        return matriz3
+
+    def transform(self, vertex, vMatrix):
+        
+        augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
+        transVertex = vMatrix @ augVertex
+
+        transVertex = transVertex.tolist()[0]
+
+        transVertex = V3(transVertex[0] / transVertex[3],
+                         transVertex[1] / transVertex[3],
+                         transVertex[2] / transVertex[3])
+
+        return transVertex
+    def createModelMatrix(self, translate = (0,0,0), scale = (1,1,1), rotate=(0,0,0)):
+
+        translateMatrix = matrix([[1, 0, 0, translate[0]],
+                                  [0, 1, 0, translate[1]],
+                                  [0, 0, 1, translate[2]],
+                                  [0, 0, 0, 1]])
+
+        scaleMatrix = matrix([[scale[0], 0, 0, 0],
+                              [0, scale[1], 0, 0],
+                              [0, 0, scale[2], 0],
+                              [0, 0, 0, 1]])
+
+        rotationMatrix = self.createRotationMatrix(rotate)
+
+        return translateMatrix * rotationMatrix * scaleMatrix
+    
+    def createRotationMatrix(self, rotate=(0,0,0)):
+
+        pitch = np.deg2rad(rotate[0])
+        yaw = np.deg2rad(rotate[1])
+        roll = np.deg2rad(rotate[2])
+
+        rotationX = matrix([[1, 0, 0, 0],
+                            [0, cos(pitch),-sin(pitch), 0],
+                            [0, sin(pitch), cos(pitch), 0],
+                            [0, 0, 0, 1]])
+
+        rotationY = matrix([[cos(yaw), 0, sin(yaw), 0],
+                            [0, 1, 0, 0],
+                            [-sin(yaw), 0, cos(yaw), 0],
+                            [0, 0, 0, 1]])
+
+        rotationZ = matrix([[cos(roll),-sin(roll), 0, 0],
+                            [sin(roll), cos(roll), 0, 0],
+                            [0, 0, 1, 0],
+                            [0, 0, 0, 1]])
+
+        print("NUMPY")
+        print(rotationX * rotationY * rotationZ)
+        """rotationX = [[1, 0, 0, 0],
+                            [0, cos(pitch),-sin(pitch), 0],
+                            [0, sin(pitch), cos(pitch), 0],
+                            [0, 0, 0, 1]]
+
+        rotationY = [[cos(yaw), 0, sin(yaw), 0],
+                            [0, 1, 0, 0],
+                            [-sin(yaw), 0, cos(yaw), 0],
+                            [0, 0, 0, 1]]
+
+        rotationZ = [[cos(roll),-sin(roll), 0, 0],
+                            [sin(roll), cos(roll), 0, 0],
+                            [0, 0, 1, 0],
+                            [0, 0, 0, 1]]
+        a=self.multiplicacion(rotationX, rotationY, 4,4,4,4)
+        b=self.multiplicacion(a, rotationZ, 4,4,4,4)
+        print("MINE")
+        print(b)"""
+        return rotationX * rotationY * rotationZ
+
+    def loadModel(self, filename, translate= (0,0,0), scale= (1,1,1), isWireframe = False, rotate=(0,0,0)): #funcion para crear modelo Obj
         model = Obj(filename)
-        """lightx=0
-        lighty=0
-        lightz=1"""
+        modelMatrix = self.createModelMatrix(translate, scale, rotate)
+        rotationMatrix = self.createRotationMatrix(rotate)
 
         for face in model.faces:
             vertCount = len(face) #conexion entre vertices para crear Wireframe
@@ -463,25 +534,6 @@ class Render(object):
                     y3 = int(v3[1] * scale[1]  + translate[1])
                     z3 = int(v3[2] * scale[2]  + translate[2])
 
-                #codigo de pruebas para modulo matematico
-                """print("------------SUBSTRACT----------------------")
-                print(v1)
-                print(v0)
-                print(np.subtract(v1,v0))
-                print(self.subtract(x1, x0, y1, y0, z1, z0))
-                print("------------CROSS----------------------")
-                print(np.cross(np.subtract(v1,v0), np.subtract(v2,v0)))
-                print(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0)))
-                normal = np.cross(np.subtract(v1,v0), np.subtract(v2,v0))
-                print(normal)
-                print("-------------------Frobenius---------------------")
-                print(np.linalg.norm(normal)) 
-                print(self.frobenius(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0))))"""
-                """print("-----------normal------------")
-                print(normal / np.linalg.norm(normal))
-                #print((self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0)))/(self.frobenius(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0)))))
-                print(self.division(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0)),self.frobenius(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0))) ))
-                """
                 #----------FORMULA CON FUNCIONES POR MI---------------
                #normal=productoCruz(V1-V0, v2-V0)/Frobenius
 

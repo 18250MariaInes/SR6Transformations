@@ -25,13 +25,13 @@ r = Render(width,height)
 
 #r.loadModel('./models/objBarrel.obj', (500,500,0), (300,300,300), t)
 
-r.active_texture = Texture('./models/suit.bmp')
+r.active_texture = Texture('./models/model.bmp')
 #r.active_texture = Texture('./models/earth.bmp')
-r.active_shader = toon
+r.active_shader = unlit
 
 #r.lightx, r.lighty, r.lightz=1,0,0
 
-r.loadModel('./models/astronaute.obj', (500,500,0), (200,200,200))
+r.loadModel('./models/model.obj', (250,250,0), (150,150,150))
 #r.loadModel('./models/earth.obj', (500,500,0), (1,1,1))
 
 r.glFinish('output.bmp')
