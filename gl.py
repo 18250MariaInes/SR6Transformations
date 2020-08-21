@@ -421,20 +421,49 @@ class Render(object):
         for i in range(f1):
             for j in range(c2):
                 for k in range(f2):
-                    numf=matriz1[i][k] * matriz2[k][j]
-                    matriz3[i][j] += numf
+                        numf=matriz1[i][k] * matriz2[k][j]
+                        matriz3[i][j] += numf
+                    
                     
         return matriz3
 
-    def transform(self, vertex, vMatrix):
-        
-        augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
-        transVertex = vMatrix @ augVertex
+    def multiplicacionV(self, G, v): #función para multiplicar matrices
+        """result = []
+        for i in range(len(v)): #this loops through columns of the matrix
+            total = 0
+            for j in range(len(G[0])): #this loops through vector coordinates & rows of matrix
+                total +=  v[i] *G[i][j]
+            result.append(total)
+        return result"""
+        print("----------------")
+        print(G)
+        print(v[0])
+        print("----------------")
+        print(G[0][1])
+        print(v[1])
+        print("----------------")
+        print(G[0][2])
+        print(v[2])
+        print("----------------")
+        print(G[0][3])
+        print(v[3])
+        return([G[0][0]*v[0]+G[0][1]*v[1]+G[0][2]*v[2]+G[0][3]*v[3]])
+                    
 
+    def transform(self, vertex, vMatrix):
+
+        """augVertex = [vertex[0], vertex[1], vertex[2], 1]
+        transVertex=self.multiplicacionV(vMatrix, augVertex)
+        print(transVertex)"""
+        augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
+        transVertex = matrix(vMatrix) @ (augVertex)
+        print("++++++++++++++++++++++++++++++++")
+        print(transVertex)
+        
         transVertex = transVertex.tolist()[0]
 
         transVertex = (transVertex[0] / transVertex[3],
-                         transVertex[1] / transVertex[3],
+                         transVertex[1]/ transVertex[3],
                          transVertex[2] / transVertex[3])
 
         return transVertex
@@ -460,24 +489,8 @@ class Render(object):
         yaw = np.deg2rad(rotate[1])
         roll = np.deg2rad(rotate[2])
 
-        rotationX = matrix([[1, 0, 0, 0],
-                            [0, cos(pitch),-sin(pitch), 0],
-                            [0, sin(pitch), cos(pitch), 0],
-                            [0, 0, 0, 1]])
-
-        rotationY = matrix([[cos(yaw), 0, sin(yaw), 0],
-                            [0, 1, 0, 0],
-                            [-sin(yaw), 0, cos(yaw), 0],
-                            [0, 0, 0, 1]])
-
-        rotationZ = matrix([[cos(roll),-sin(roll), 0, 0],
-                            [sin(roll), cos(roll), 0, 0],
-                            [0, 0, 1, 0],
-                            [0, 0, 0, 1]])
-
-        print("NUMPY")
-        print(rotationX * rotationY * rotationZ)
-        """rotationX = [[1, 0, 0, 0],
+        
+        rotationX = [[1, 0, 0, 0],
                             [0, cos(pitch),-sin(pitch), 0],
                             [0, sin(pitch), cos(pitch), 0],
                             [0, 0, 0, 1]]
@@ -493,9 +506,7 @@ class Render(object):
                             [0, 0, 0, 1]]
         a=self.multiplicacion(rotationX, rotationY, 4,4,4,4)
         b=self.multiplicacion(a, rotationZ, 4,4,4,4)
-        print("MINE")
-        print(b)"""
-        return rotationX * rotationY * rotationZ
+        return (b)
 
     def loadModel(self, filename, translate= (0,0,0), scale= (1,1,1), rotate=(0,0,0), isWireframe = False): #funcion para crear modelo Obj
         model = Obj(filename)
