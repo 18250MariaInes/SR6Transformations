@@ -10,7 +10,8 @@ from obj import Obj
 import random
 from numpy import matrix, cos, sin
 import numpy as np
-
+from collections import namedtuple
+V4 = namedtuple('Point4', ['x', 'y', 'z','w'])
 
 def char(c):
     # 1 byte
@@ -333,10 +334,10 @@ class Render(object):
     #Barycentric Coordinates
     def triangle_bc(self, Ax, Bx, Cx, Ay, By, Cy, Az, Bz, Cz, tax, tbx, tcx, tay, tby, tcy, normals=(), colorest = WHITE):
         #bounding box
-        minX = min(Ax, Bx, Cx)
-        minY = min(Ay, By, Cy)
-        maxX = max(Ax, Bx, Cx)
-        maxY = max(Ay, By, Cy)
+        minX = round(min(Ax, Bx, Cx))
+        minY = round( min(Ay, By, Cy))
+        maxX = round(max(Ax, Bx, Cx))
+        maxY = round(max(Ay, By, Cy))
 
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
@@ -408,6 +409,9 @@ class Render(object):
     #realiza producto punto entre la matriz y la luz
     def dot(self, normal, lightx, lighty, lightz):
         return (normal[0]*lightx+normal[1]*lighty+normal[2]*lightz)
+    
+    def dot4(self, matrix1, matrix2):
+        return (matrix1[0]*matrix2[0]+matrix1[1]*matrix2[1]+matrix1[2]*matrix2[2]+matrix1[3]*matrix2[3])
 
     def multiplicacion(self, matriz1, matriz2, c1, f1, c2, f2): #función para multiplicar matrices
         matriz3 = []
@@ -429,7 +433,7 @@ class Render(object):
 
         transVertex = transVertex.tolist()[0]
 
-        transVertex = V3(transVertex[0] / transVertex[3],
+        transVertex = (transVertex[0] / transVertex[3],
                          transVertex[1] / transVertex[3],
                          transVertex[2] / transVertex[3])
 
@@ -493,7 +497,7 @@ class Render(object):
         print(b)"""
         return rotationX * rotationY * rotationZ
 
-    def loadModel(self, filename, translate= (0,0,0), scale= (1,1,1), isWireframe = False, rotate=(0,0,0)): #funcion para crear modelo Obj
+    def loadModel(self, filename, translate= (0,0,0), scale= (1,1,1), rotate=(0,0,0), isWireframe = False): #funcion para crear modelo Obj
         model = Obj(filename)
         modelMatrix = self.createModelMatrix(translate, scale, rotate)
         rotationMatrix = self.createRotationMatrix(rotate)
@@ -517,8 +521,11 @@ class Render(object):
                 v0 = model.vertices[ face[0][0] - 1 ]
                 v1 = model.vertices[ face[1][0] - 1 ]
                 v2 = model.vertices[ face[2][0] - 1 ]
+                v0 = self.transform(v0, modelMatrix)
+                v1 = self.transform(v1, modelMatrix)
+                v2 = self.transform(v2, modelMatrix)
 
-                x0 = int(v0[0] * scale[0]  + translate[0])
+                """x0 = int(v0[0] * scale[0]  + translate[0])
                 y0 = int(v0[1] * scale[1]  + translate[1])
                 z0 = int(v0[2] * scale[2]  + translate[2])
                 x1 = int(v1[0] * scale[0]  + translate[0])
@@ -526,13 +533,24 @@ class Render(object):
                 z1 = int(v1[2] * scale[2]  + translate[2])
                 x2 = int(v2[0] * scale[0]  + translate[0])
                 y2 = int(v2[1] * scale[1]  + translate[1])
-                z2 = int(v2[2] * scale[2]  + translate[2])
+                z2 = int(v2[2] * scale[2]  + translate[2])"""
+                
+                x0 = v0[0]
+                y0 = v0[1]
+                z0 = v0[2]
+                x1 = v1[0]
+                y1 = v1[1]
+                z1 = v1[2]
+                x2 = v2[0]
+                y2 = v2[1]
+                z2 = v2[2]
 
                 if vertCount > 3: #asumamos que 4, un cuadrado
                     v3 = model.vertices[ face[3][0] - 1 ]
-                    x3 = int(v3[0] * scale[0]  + translate[0])
-                    y3 = int(v3[1] * scale[1]  + translate[1])
-                    z3 = int(v3[2] * scale[2]  + translate[2])
+                    v3 = self.transform(v3, modelMatrix)
+                    x3 = v3[0]
+                    y3 = v3[1]
+                    z3 = v3[2]
 
                 #----------FORMULA CON FUNCIONES POR MI---------------
                #normal=productoCruz(V1-V0, v2-V0)/Frobenius
@@ -565,8 +583,13 @@ class Render(object):
                 vn0 = model.normals[face[0][2] - 1]
                 vn1 = model.normals[face[1][2] - 1]
                 vn2 = model.normals[face[2][2] - 1]
+                #para rotar normales y que la luz no se mueva con el modelo OBJ
+                vn0 = self.transform(vn0, rotationMatrix)
+                vn1 = self.transform(vn1, rotationMatrix)
+                vn2 = self.transform(vn2, rotationMatrix)
                 if vertCount > 3:
                     vn3 = model.normals[face[3][2] - 1]
+                    vn3 = self.transform(vn3, rotationMatrix)
 
 
                 #normalMI=self.division(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0)),self.frobenius(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0))) )

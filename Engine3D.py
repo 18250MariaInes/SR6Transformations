@@ -12,8 +12,8 @@ from shaders import *
 
 #valores con los que se inicializan la ventana y viewport
 
-width=1200
-height=1200
+width=500
+height=500
 
 #creacion de Window
 
@@ -27,11 +27,11 @@ r = Render(width,height)
 
 r.active_texture = Texture('./models/model.bmp')
 #r.active_texture = Texture('./models/earth.bmp')
-r.active_shader = unlit
+r.active_shader = gouraud
 
 #r.lightx, r.lighty, r.lightz=1,0,0
 
-r.loadModel('./models/model.obj', (250,250,0), (150,150,150))
+r.loadModel('./models/model.obj', (250,250,0), (150,150,150),(0,90,0))
 #r.loadModel('./models/earth.obj', (500,500,0), (1,1,1))
 
 r.glFinish('output.bmp')
