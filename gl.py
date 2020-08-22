@@ -334,10 +334,10 @@ class Render(object):
     #Barycentric Coordinates
     def triangle_bc(self, Ax, Bx, Cx, Ay, By, Cy, Az, Bz, Cz, tax, tbx, tcx, tay, tby, tcy, normals=(), colorest = WHITE):
         #bounding box
-        minX = round(min(Ax, Bx, Cx))
-        minY = round( min(Ay, By, Cy))
-        maxX = round(max(Ax, Bx, Cx))
-        maxY = round(max(Ay, By, Cy))
+        minX = int(min(Ax, Bx, Cx))
+        minY = int( min(Ay, By, Cy))
+        maxX = int(max(Ax, Bx, Cx))
+        maxY = int(max(Ay, By, Cy))
 
         for x in range(minX, maxX + 1):
             for y in range(minY, maxY + 1):
@@ -427,61 +427,62 @@ class Render(object):
                     
         return matriz3
 
-    def multiplicacionV(self, G, v): #función para multiplicar matrices
-        """result = []
-        for i in range(len(v)): #this loops through columns of the matrix
+    def multiplicacionV(self, G, v, f1, c2): #función para multiplicar matrices
+        result = []
+        for i in range(f1): #this loops through columns of the matrix
             total = 0
-            for j in range(len(G[0])): #this loops through vector coordinates & rows of matrix
-                total +=  v[i] *G[i][j]
+            for j in range(c2): #this loops through vector coordinates & rows of matrix
+                total +=  v[i] *G[j][i]
             result.append(total)
-        return result"""
-        print("----------------")
-        print(G)
-        print(v[0])
-        print("----------------")
-        print(G[0][1])
-        print(v[1])
-        print("----------------")
-        print(G[0][2])
-        print(v[2])
-        print("----------------")
-        print(G[0][3])
-        print(v[3])
-        return([G[0][0]*v[0]+G[0][1]*v[1]+G[0][2]*v[2]+G[0][3]*v[3]])
+        return result
+        
+        
                     
 
     def transform(self, vertex, vMatrix):
 
-        """augVertex = [vertex[0], vertex[1], vertex[2], 1]
-        transVertex=self.multiplicacionV(vMatrix, augVertex)
-        print(transVertex)"""
         augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
         transVertex = matrix(vMatrix) @ (augVertex)
-        print("++++++++++++++++++++++++++++++++")
-        print(transVertex)
+        
+        pVertex=( vertex[0], vertex[1], vertex[2], 1)
+        a=self.multiplicacionV(vMatrix, pVertex, 4,4)
         
         transVertex = transVertex.tolist()[0]
-
+        pVertex=(a[2] / a[3],
+                a[1]/ a[3],
+                a[0] / a[3])
         transVertex = (transVertex[0] / transVertex[3],
                          transVertex[1]/ transVertex[3],
                          transVertex[2] / transVertex[3])
+        """print(transVertex)
+        
+        print(pVertex)
+        print("--------------------------")"""
 
-        return transVertex
+        if (pVertex!=transVertex):
+            pVertex=transVertex
+        #b=(a[2], a[1], )
+        return pVertex
+
     def createModelMatrix(self, translate = (0,0,0), scale = (1,1,1), rotate=(0,0,0)):
 
-        translateMatrix = matrix([[1, 0, 0, translate[0]],
+        translateMatrix = [[1, 0, 0, translate[0]],
                                   [0, 1, 0, translate[1]],
                                   [0, 0, 1, translate[2]],
-                                  [0, 0, 0, 1]])
+                                  [0, 0, 0, 1]]
 
-        scaleMatrix = matrix([[scale[0], 0, 0, 0],
+        scaleMatrix = [[scale[0], 0, 0, 0],
                               [0, scale[1], 0, 0],
                               [0, 0, scale[2], 0],
-                              [0, 0, 0, 1]])
+                              [0, 0, 0, 1]]
 
         rotationMatrix = self.createRotationMatrix(rotate)
 
-        return translateMatrix * rotationMatrix * scaleMatrix
+        a=self.multiplicacion(translateMatrix, rotationMatrix, 4,4,4,4)
+        b=self.multiplicacion(a, scaleMatrix, 4,4,4,4)
+        #print(b)
+
+        return b
     
     def createRotationMatrix(self, rotate=(0,0,0)):
 
