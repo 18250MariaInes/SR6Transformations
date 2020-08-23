@@ -311,8 +311,6 @@ def checkered(render, **kwargs):
     nx = na[0] * u + nb[0] * v + nc[0] * w
     ny = na[1] * u + nb[1] * v + nc[1] * w
     nz = na[2] * u + nb[2] * v + nc[2] * w
-    
-
 
     normal = (nx, ny, nz)
 #producto punto de las funciones que sustituyen a numpy

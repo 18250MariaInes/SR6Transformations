@@ -6,14 +6,14 @@ SR5 Textures
 Main
 """
 
-from gl import Render
+from gl import Render, V2, V3
 from obj import Obj, Texture
 from shaders import *
 
 #valores con los que se inicializan la ventana y viewport
 
-width=500
-height=500
+width=768
+height=432
 
 #creacion de Window
 
@@ -30,8 +30,10 @@ r.active_texture = Texture('./models/model.bmp')
 r.active_shader = gouraud
 
 #r.lightx, r.lighty, r.lightz=1,0,0
+posModel = ( 0, 0, 0)
 
-r.loadModel('./models/model.obj', (250,250,0), (150,150,150),(0,0,0))
+r.lookAt(posModel, V3(-1,-1,-5))
+r.loadModel('./models/model.obj', posModel, (1,1,1),(0,0,0))
 #r.loadModel('./models/earth.obj', (500,500,0), (1,1,1))
 
 r.glFinish('output.bmp')

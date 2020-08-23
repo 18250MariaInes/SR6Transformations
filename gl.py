@@ -8,10 +8,15 @@ Funciones
 import struct
 from obj import Obj
 import random
-from numpy import matrix, cos, sin
+from numpy import matrix, cos, sin, tan
 import numpy as np
 from collections import namedtuple
 V4 = namedtuple('Point4', ['x', 'y', 'z','w'])
+
+
+V2 = namedtuple('Point2', ['x', 'y'])
+V3 = namedtuple('Point3', ['x', 'y', 'z'])
+
 
 def char(c):
     # 1 byte
@@ -60,7 +65,32 @@ class Render(object):
         self.active_texture = None
         self.active_texture2 = None
         self.active_shader = None
+        self.camPosition=(0,0,0)
+        self.camRotation=(0,0,0)
+        self.createViewMatrix()
+        self.createProjectionMatrix()
+    
+    def createViewMatrix(self, camPosition = (0,0,0), camRotation = (0,0,0)):
+        camMatrix = self.createObjectMatrix( translate = camPosition, rotate = camRotation)
+        self.viewMatrix = np.linalg.inv(matrix(camMatrix))#sustituir por mi funcion
 
+    def lookAt(self, eye, camPosition = V3(0,0,0)):
+
+        forward = np.subtract(camPosition, eye)
+        forward = forward / np.linalg.norm(forward)
+
+        right = np.cross(V3(0,1,0), forward)
+        right = right / np.linalg.norm(right)
+
+        up = np.cross(forward, right)
+        up = up / np.linalg.norm(up)
+
+        camMatrix = matrix([[right[0], up[0], forward[0], camPosition.x],
+                            [right[1], up[1], forward[1], camPosition.y],
+                            [right[2], up[2], forward[2], camPosition.z],
+                            [0,0,0,1]])
+
+        self.viewMatrix = np.linalg.inv(camMatrix)
     #Inicializa objetos internos
     def glInit(self, width, height):
         #esto se establece ahora en la funcion glCreatWindow
@@ -86,6 +116,19 @@ class Render(object):
         self.vportx = x
         self.vporty = y
 
+        self.viewportMatrix = [[width/2, 0, 0, x + width/2],
+                                      [0, height/2, 0, y + height/2],
+                                      [0, 0, 0.5, 0.5],
+                                      [0, 0, 0, 1]]
+    def createProjectionMatrix(self, n = 0.1, f = 1000, fov = 60):
+
+        t = tan((fov * np.pi / 180) / 2) * n
+        r = t * self.vportwidth / self.vportheight
+
+        self.projectionMatrix = matrix([[n / r, 0, 0, 0],
+                                        [0, n / t, 0, 0],
+                                        [0, 0, -(f+n)/(f-n), -(2*f*n)/(f-n)],
+                                        [0, 0, -1, 0]])
     #cambia el color con el que se llena el mapa de bits (fondo)
     def glClearColor(self, red, green, blue):
         nred=int(255*red)
@@ -442,29 +485,55 @@ class Render(object):
     def transform(self, vertex, vMatrix):
 
         augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
-        transVertex = matrix(vMatrix) @ (augVertex)
-        
-        pVertex=( vertex[0], vertex[1], vertex[2], 1)
-        a=self.multiplicacionV(vMatrix, pVertex, 4,4)
+        transVertex = self.viewportMatrix @ self.projectionMatrix @ self.viewMatrix @ vMatrix @ augVertex #sustituir
+        #"""matrix(self.viewportMatrix) @"""
+        """pVertex=( vertex[0], vertex[1], vertex[2], 1)
+        a=self.multiplicacionV(vMatrix, pVertex, 4,4)"""
         
         transVertex = transVertex.tolist()[0]
-        pVertex=(a[0] / a[3],
+        """pVertex=(a[0] / a[3],
                 a[1]/ a[3],
-                a[2] / a[3])
+                a[2] / a[3])"""
         transVertex = (transVertex[0] / transVertex[3],
                          transVertex[1]/ transVertex[3],
                          transVertex[2] / transVertex[3])
-        print(transVertex)
+        """print(transVertex)
         
         print(pVertex)
-        print("--------------------------")
+        print("--------------------------")"""
 
-        if (pVertex!=transVertex):
-            pVertex=transVertex
+        """if (pVertex!=transVertex):
+            pVertex=transVertex"""
         #b=(a[2], a[1], )
-        return pVertex
+        print(transVertex)
+        return transVertex
 
-    def createModelMatrix(self, translate = (0,0,0), scale = (1,1,1), rotate=(0,0,0)):
+    def dirTransform(self, vertex, vMatrix):
+
+        augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
+        transVertex = matrix(vMatrix) @ (augVertex) #sustituir
+        
+        """pVertex=( vertex[0], vertex[1], vertex[2], 1)
+        a=self.multiplicacionV(vMatrix, pVertex, 4,4)"""
+        
+        transVertex = transVertex.tolist()[0]
+        """pVertex=(a[0] / a[3],
+                a[1]/ a[3],
+                a[2] / a[3])"""
+        transVertex = (transVertex[0],
+                         transVertex[1],
+                         transVertex[2])
+        """print(transVertex)
+        
+        print(pVertex)
+        print("--------------------------")"""
+
+        """if (pVertex!=transVertex):
+            pVertex=transVertex"""
+        #b=(a[2], a[1], )
+        return transVertex
+
+    def createObjectMatrix(self, translate = (0,0,0), scale = (1,1,1), rotate=(0,0,0)):
 
         translateMatrix = [[1, 0, 0, translate[0]],
                                   [0, 1, 0, translate[1]],
@@ -511,7 +580,7 @@ class Render(object):
 
     def loadModel(self, filename, translate= (0,0,0), scale= (1,1,1), rotate=(0,0,0), isWireframe = False): #funcion para crear modelo Obj
         model = Obj(filename)
-        modelMatrix = self.createModelMatrix(translate, scale, rotate)
+        modelMatrix = self.createObjectMatrix(translate, scale, rotate)
         rotationMatrix = self.createRotationMatrix(rotate)
 
         for face in model.faces:
@@ -537,15 +606,6 @@ class Render(object):
                 v1 = self.transform(v1, modelMatrix)
                 v2 = self.transform(v2, modelMatrix)
 
-                """x0 = int(v0[0] * scale[0]  + translate[0])
-                y0 = int(v0[1] * scale[1]  + translate[1])
-                z0 = int(v0[2] * scale[2]  + translate[2])
-                x1 = int(v1[0] * scale[0]  + translate[0])
-                y1 = int(v1[1] * scale[1]  + translate[1])
-                z1 = int(v1[2] * scale[2]  + translate[2])
-                x2 = int(v2[0] * scale[0]  + translate[0])
-                y2 = int(v2[1] * scale[1]  + translate[1])
-                z2 = int(v2[2] * scale[2]  + translate[2])"""
                 
                 x0 = v0[0]
                 y0 = v0[1]
@@ -596,12 +656,12 @@ class Render(object):
                 vn1 = model.normals[face[1][2] - 1]
                 vn2 = model.normals[face[2][2] - 1]
                 #para rotar normales y que la luz no se mueva con el modelo OBJ
-                vn0 = self.transform(vn0, rotationMatrix)
-                vn1 = self.transform(vn1, rotationMatrix)
-                vn2 = self.transform(vn2, rotationMatrix)
+                vn0 = self.dirTransform(vn0, rotationMatrix)
+                vn1 = self.dirTransform(vn1, rotationMatrix)
+                vn2 = self.dirTransform(vn2, rotationMatrix)
                 if vertCount > 3:
                     vn3 = model.normals[face[3][2] - 1]
-                    vn3 = self.transform(vn3, rotationMatrix)
+                    vn3 = self.dirTransform(vn3, rotationMatrix)
 
 
                 #normalMI=self.division(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0)),self.frobenius(self.cross(self.subtract(x1, x0, y1, y0, z1, z0), self.subtract(x2, x0, y2, y0, z2, z0))) )
