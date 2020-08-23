@@ -117,15 +117,15 @@ class Render(object):
         pup=self.division(pup, self.frobenius(pup))
         #print(pup)
 
-        camMatrix = matrix([[pright[0], pup[0], pforward[0], camPosition[0]],
+        camMatrix = [[pright[0], pup[0], pforward[0], camPosition[0]],
                             [pright[1], pup[1], pforward[1], camPosition[1]],
                             [pright[2], pup[2], pforward[2], camPosition[2]],
-                            [0,0,0,1]])
+                            [0,0,0,1]]
 
         #self.viewMatrix = np.linalg.inv(camMatrix)
         self.viewMatrix = camMatrix ##revisar
-        print(self.viewMatrix)
-        print(camMatrix)
+        """print(self.viewMatrix)
+        print(camMatrix)"""
     #Inicializa objetos internos
     def glInit(self, width, height):
         #esto se establece ahora en la funcion glCreatWindow
@@ -160,10 +160,10 @@ class Render(object):
         t = tan((fov * np.pi / 180) / 2) * n
         r = t * self.vportwidth / self.vportheight
 
-        self.projectionMatrix = matrix([[n / r, 0, 0, 0],
+        self.projectionMatrix = [[n / r, 0, 0, 0],
                                         [0, n / t, 0, 0],
                                         [0, 0, -(f+n)/(f-n), -(2*f*n)/(f-n)],
-                                        [0, 0, -1, 0]]) #-------------------------------------------quitar cuando se quite @
+                                        [0, 0, -1, 0]] #-------------------------------------------quitar cuando se quite @
     #cambia el color con el que se llena el mapa de bits (fondo)
     def glClearColor(self, red, green, blue):
         nred=int(255*red)
@@ -514,59 +514,47 @@ class Render(object):
             result.append(total)
         return result
         
+    def multMaster(self, v, M):
+        c = []
+        for i in range(0,len(v)):
+            temp=[]
+            for j in range(0,len(M[0])):
+                s = 0
+                for k in range(0,len(v[0])):
+                    s += v[i][k]*M[k][j]
+                temp.append(s)
+            c.append(temp)
+        return c
         
                     
 
     def transform(self, vertex, vMatrix):
 
-        augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
-        transVertex = self.viewportMatrix @ self.projectionMatrix @ self.viewMatrix @ vMatrix @ augVertex #sustituir
-        #"""matrix(self.viewportMatrix) @"""
-        """pVertex=( vertex[0], vertex[1], vertex[2], 1)
-        a=self.multiplicacionV(vMatrix, pVertex, 4,4)"""
         
-        transVertex = transVertex.tolist()[0]
-        """pVertex=(a[0] / a[3],
-                a[1]/ a[3],
-                a[2] / a[3])"""
-        transVertex = (transVertex[0] / transVertex[3],
-                         transVertex[1]/ transVertex[3],
-                         transVertex[2] / transVertex[3])
-        """print(transVertex)
+        pVertex=[ [vertex[0]], [vertex[1]], [vertex[2]], [1]]
+        a=self.multMaster(self.viewportMatrix, self.projectionMatrix)
+        b=self.multMaster(a, self.viewMatrix)
+        c=self.multMaster(b, vMatrix)
+        pVertex=self.multMaster(c, pVertex)
         
-        print(pVertex)
-        print("--------------------------")"""
-
-        """if (pVertex!=transVertex):
-            pVertex=transVertex"""
-        #b=(a[2], a[1], )
-        #print(transVertex)
-        return transVertex
+        
+        pVertex=(pVertex[0][0] / pVertex[3][0] ,
+                pVertex[1][0] / pVertex[3][0] ,
+                pVertex[2][0]  / pVertex[3][0] )
+        
+        return pVertex
 
     def dirTransform(self, vertex, vMatrix):
 
-        augVertex = V4( vertex[0], vertex[1], vertex[2], 1)
-        transVertex = matrix(vMatrix) @ (augVertex) #sustituir
-        
-        """pVertex=( vertex[0], vertex[1], vertex[2], 1)
-        a=self.multiplicacionV(vMatrix, pVertex, 4,4)"""
-        
-        transVertex = transVertex.tolist()[0]
-        """pVertex=(a[0] / a[3],
-                a[1]/ a[3],
-                a[2] / a[3])"""
-        transVertex = (transVertex[0],
-                         transVertex[1],
-                         transVertex[2])
-        """print(transVertex)
-        
-        print(pVertex)
-        print("--------------------------")"""
+        pVertex=[ [vertex[0]], [vertex[1]], [vertex[2]], [0]]
+       
+        a=self.multMaster(pVertex, vMatrix)
+ 
+        pVertex=(a[0][0],
+                a[1][0],
+                a[2][0])
 
-        """if (pVertex!=transVertex):
-            pVertex=transVertex"""
-        #b=(a[2], a[1], )
-        return transVertex
+        return pVertex
 
     def createObjectMatrix(self, translate = (0,0,0), scale = (1,1,1), rotate=(0,0,0)):
 

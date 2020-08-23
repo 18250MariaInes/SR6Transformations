@@ -30,9 +30,9 @@ r.active_texture = Texture('./models/model.bmp')
 r.active_shader = gouraud
 
 #r.lightx, r.lighty, r.lightz=1,0,0
-posModel = ( 0, 0, -5)
+posModel = ( 0, 1, 0)
 
-r.lookAt(posModel, (2,2,0))
+r.lookAt(posModel, (-1,-1,-3))
 r.loadModel('./models/model.obj', posModel, (1,1,1),(0,0,0))
 #r.loadModel('./models/earth.obj', (500,500,0), (1,1,1))
 
