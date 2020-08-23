@@ -2,7 +2,7 @@
 Maria Ines Vasquez Figueroa
 18250
 Gráficas
-SR5 Textures
+SR6 Transformations
 Carga OBJ
 """
 #Carga de archivo OBJ

@@ -2,20 +2,18 @@
 Maria Ines Vasquez Figueroa
 18250
 Gráficas
-SR4 Flat Shading
+SR6 Transformations
 Funciones
 """
 import struct
 from obj import Obj
 import random
-from numpy import matrix, cos, sin, tan
+from numpy import  cos, sin, tan
 import numpy as np
-from collections import namedtuple
-V4 = namedtuple('Point4', ['x', 'y', 'z','w'])
-
-
-V2 = namedtuple('Point2', ['x', 'y'])
-V3 = namedtuple('Point3', ['x', 'y', 'z'])
+"""
+Carlos nos permitio usar numpy para las operaciones de cos, sin, tan y transformar de grados a radianes, todas las otras operaciones matematica
+fueron sustituidas y creadas por mi.
+"""
 
 
 def char(c):
@@ -72,10 +70,50 @@ class Render(object):
     
     def createViewMatrix(self, camPosition = (0,0,0), camRotation = (0,0,0)):
         camMatrix = self.createObjectMatrix( translate = camPosition, rotate = camRotation)
-        #self.viewMatrix = np.linalg.inv(matrix(camMatrix))#sustituir por mi funcion
-        self.viewMatrix = camMatrix
-        """print(camMatrix)
-        print(self.viewMatrix)"""
+        self.viewMatrix=self.getMatrixInverse(camMatrix)
+       
+
+    #funciones para sacar inversa de la matriz extraido de: https://stackoverflow.com/questions/32114054/matrix-inversion-without-numpy, editado por mi para acomodarlo al proyecto
+    def transposeMatrix(self, m):
+        a=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        for i in range(0, 4):
+            for j in range(0, 4):
+                a[j][i]=m[i][j]
+        return a
+
+    def getMatrixMinor(self,m,i,j):
+        return [row[:j] + row[j+1:] for row in (m[:i]+m[i+1:])]
+
+    def getMatrixDeternminant(self, m):
+        #base case for 2x2 matrix
+        if len(m) == 2:
+            return m[0][0]*m[1][1]-m[0][1]*m[1][0]
+
+        determinant = 0
+        for c in range(len(m)):
+            determinant += ((-1)**c)*m[0][c]*self.getMatrixDeternminant(self.getMatrixMinor(m,0,c))
+        return determinant
+
+    def getMatrixInverse(self, m):
+        determinant = self.getMatrixDeternminant(m)
+        #special case for 2x2 matrix:
+        if len(m) == 2:
+            return [[m[1][1]/determinant, -1*m[0][1]/determinant],
+                    [-1*m[1][0]/determinant, m[0][0]/determinant]]
+
+        #find matrix of cofactors
+        cofactors = []
+        for r in range(len(m)):
+            cofactorRow = []
+            for c in range(len(m)):
+                minor = self.getMatrixMinor(m,r,c)
+                cofactorRow.append(((-1)**(r+c)) * self.getMatrixDeternminant(minor))
+            cofactors.append(cofactorRow)
+        cofactors = self.transposeMatrix(cofactors)
+        for r in range(len(cofactors)):
+            for c in range(len(cofactors)):
+                cofactors[r][c] = cofactors[r][c]/determinant
+        return cofactors
 
     def lookAt(self, eye, camPosition = (0,0,0)):
 
@@ -87,18 +125,18 @@ class Render(object):
         print(self.subtract(camPosition[0],eye[0],camPosition[1],eye[1],camPosition[2],eye[2]))#funciona"""
         #forward = np.subtract(camPosition, eye)
         pforward=self.subtract(camPosition[0],eye[0],camPosition[1],eye[1],camPosition[2],eye[2])
+        pforward=self.division(pforward, self.frobenius(pforward))#si funciona ya
         """print("resta numpy")
         print(np.subtract(camPosition, eye))
         print("normal")
         print(np.linalg.norm(forward))"""
-        pforward=self.division(self.subtract(camPosition[0],eye[0],camPosition[1],eye[1],camPosition[2],eye[2]), self.frobenius(pforward))#si funciona ya
+        
         #forward = forward / np.linalg.norm(forward)
         """print("resta numpy/normal")
         print(forward)
         print("mi forward")
         print(pforward)"""
         
-
         """print("cross con numpy")
         print(np.cross(V3(0,1,0), forward))
         print("mi cross")
@@ -122,10 +160,9 @@ class Render(object):
                             [pright[2], pup[2], pforward[2], camPosition[2]],
                             [0,0,0,1]]
 
-        #self.viewMatrix = np.linalg.inv(camMatrix)
-        self.viewMatrix = camMatrix ##revisar
-        """print(self.viewMatrix)
-        print(camMatrix)"""
+        
+        self.viewMatrix=self.getMatrixInverse(camMatrix)
+        
     #Inicializa objetos internos
     def glInit(self, width, height):
         #esto se establece ahora en la funcion glCreatWindow
@@ -150,11 +187,12 @@ class Render(object):
         self.vportheight = height
         self.vportx = x
         self.vporty = y
-
+        #matriz del viewport para crear camara
         self.viewportMatrix = [[width/2, 0, 0, x + width/2],
                                       [0, height/2, 0, y + height/2],
                                       [0, 0, 0.5, 0.5],
                                       [0, 0, 0, 1]]
+    
     def createProjectionMatrix(self, n = 0.1, f = 1000, fov = 60):
 
         t = tan((fov * np.pi / 180) / 2) * n
@@ -163,7 +201,7 @@ class Render(object):
         self.projectionMatrix = [[n / r, 0, 0, 0],
                                         [0, n / t, 0, 0],
                                         [0, 0, -(f+n)/(f-n), -(2*f*n)/(f-n)],
-                                        [0, 0, -1, 0]] #-------------------------------------------quitar cuando se quite @
+                                        [0, 0, -1, 0]] 
     #cambia el color con el que se llena el mapa de bits (fondo)
     def glClearColor(self, red, green, blue):
         nred=int(255*red)
@@ -505,7 +543,7 @@ class Render(object):
                     
         return matriz3
 
-    def multiplicacionV(self, G, v, f1, c2): #función para multiplicar matrices
+    def multiplicacionV(self, G, v, f1, c2): #función para multiplicar matrices, esta fue un fracaso pero la dejo porque tengo fe que algun día funcionará
         result = []
         for i in range(0,f1): #this loops through columns of the matrix
             total = 0
@@ -514,7 +552,7 @@ class Render(object):
             result.append(total)
         return result
         
-    def multMaster(self, v, M):
+    def multMaster(self, v, M): #función para multiplicar desde matrices hasta vectores
         c = []
         for i in range(0,len(v)):
             temp=[]
@@ -528,7 +566,7 @@ class Render(object):
         
                     
 
-    def transform(self, vertex, vMatrix):
+    def transform(self, vertex, vMatrix):#sustitucion del transform antiguo
 
         
         pVertex=[ [vertex[0]], [vertex[1]], [vertex[2]], [1]]
@@ -544,7 +582,7 @@ class Render(object):
         
         return pVertex
 
-    def dirTransform(self, vertex, vMatrix):
+    def dirTransform(self, vertex, vMatrix):#transform para las normales
 
         pVertex=[ [vertex[0]], [vertex[1]], [vertex[2]], [0]]
        
@@ -557,22 +595,23 @@ class Render(object):
         return pVertex
 
     def createObjectMatrix(self, translate = (0,0,0), scale = (1,1,1), rotate=(0,0,0)):
-
+        #matriz de traslacion
         translateMatrix = [[1, 0, 0, translate[0]],
                                   [0, 1, 0, translate[1]],
                                   [0, 0, 1, translate[2]],
                                   [0, 0, 0, 1]]
 
+        #matriz de la escala
         scaleMatrix = [[scale[0], 0, 0, 0],
                               [0, scale[1], 0, 0],
                               [0, 0, scale[2], 0],
                               [0, 0, 0, 1]]
 
+        #matriz de rotacion
         rotationMatrix = self.createRotationMatrix(rotate)
-
+        #multiplicacion de matrices sin numpy
         a=self.multiplicacion(translateMatrix, rotationMatrix, 4,4,4,4)
         b=self.multiplicacion(a, scaleMatrix, 4,4,4,4)
-        #print(b)
 
         return b
     
@@ -582,21 +621,22 @@ class Render(object):
         yaw = np.deg2rad(rotate[1])
         roll = np.deg2rad(rotate[2])
 
-        
+        #matriz de rotacion en x
         rotationX = [[1, 0, 0, 0],
                             [0, cos(pitch),-sin(pitch), 0],
                             [0, sin(pitch), cos(pitch), 0],
                             [0, 0, 0, 1]]
-
+        #matriz de rotacion en y
         rotationY = [[cos(yaw), 0, sin(yaw), 0],
                             [0, 1, 0, 0],
                             [-sin(yaw), 0, cos(yaw), 0],
                             [0, 0, 0, 1]]
-
+        #matriz de rotacion en z
         rotationZ = [[cos(roll),-sin(roll), 0, 0],
                             [sin(roll), cos(roll), 0, 0],
                             [0, 0, 1, 0],
                             [0, 0, 0, 1]]
+        #multiplicacion de matrices sin numpy
         a=self.multiplicacion(rotationX, rotationY, 4,4,4,4)
         b=self.multiplicacion(a, rotationZ, 4,4,4,4)
         return (b)
@@ -679,7 +719,7 @@ class Render(object):
                 vn1 = model.normals[face[1][2] - 1]
                 vn2 = model.normals[face[2][2] - 1]
                 #para rotar normales y que la luz no se mueva con el modelo OBJ
-                vn0 = self.dirTransform(vn0, rotationMatrix)
+                vn0 = self.dirTransform(vn0, rotationMatrix)#sustituir con transform de normales
                 vn1 = self.dirTransform(vn1, rotationMatrix)
                 vn2 = self.dirTransform(vn2, rotationMatrix)
                 if vertCount > 3:

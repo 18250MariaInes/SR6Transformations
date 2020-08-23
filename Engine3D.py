@@ -2,11 +2,11 @@
 Maria Ines Vasquez Figueroa
 18250
 Gráficas
-SR5 Textures
+SR6 Transformations
 Main
 """
 
-from gl import Render, V2, V3
+from gl import Render
 from obj import Obj, Texture
 from shaders import *
 
