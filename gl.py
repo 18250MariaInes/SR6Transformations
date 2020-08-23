@@ -8,7 +8,7 @@ Funciones
 import struct
 from obj import Obj
 import random
-from numpy import  cos, sin, tan
+from numpy import  cos, sin, tan, matrix
 import numpy as np
 """
 Carlos nos permitio usar numpy para las operaciones de cos, sin, tan y transformar de grados a radianes, todas las otras operaciones matematica
@@ -59,18 +59,21 @@ class Render(object):
         self.glCreateWindow(width, height)
         self.lightx=0
         self.lighty=0
-        self.lightz=1
+        self.lightz=-1
         self.active_texture = None
         self.active_texture2 = None
         self.active_shader = None
-        self.camPosition=(0,0,0)
-        self.camRotation=(0,0,0)
+        """self.camPosition=(0,0,0)
+        self.camRotation=(0,0,0)"""
         self.createViewMatrix()
         self.createProjectionMatrix()
     
     def createViewMatrix(self, camPosition = (0,0,0), camRotation = (0,0,0)):
         camMatrix = self.createObjectMatrix( translate = camPosition, rotate = camRotation)
         self.viewMatrix=self.getMatrixInverse(camMatrix)
+        """print(self.viewMatrix)
+        print(np.linalg.inv(matrix(camMatrix)))
+        print("-----------")"""
        
 
     #funciones para sacar inversa de la matriz extraido de: https://stackoverflow.com/questions/32114054/matrix-inversion-without-numpy, editado por mi para acomodarlo al proyecto
@@ -162,6 +165,8 @@ class Render(object):
 
         
         self.viewMatrix=self.getMatrixInverse(camMatrix)
+        #self.viewMatrix=camMatrix
+        
         
     #Inicializa objetos internos
     def glInit(self, width, height):
@@ -220,6 +225,9 @@ class Render(object):
     def glVertex(self, x, y):
         nx=int((x+1)*(self.vportwidth/2)+self.vportx)
         ny=int((y+1)*(self.vportheight/2)+self.vporty)
+
+        if nx >= self.width or nx < 0 or ny >= self.height or ny < 0:
+            return
         try:
             self.pixels[ny][nx] = self.curr_color
         except:
@@ -234,11 +242,12 @@ class Render(object):
     
     def glVertex_coord(self, x,y, color = None):#helper para dibujar puntas en la funcion de glLine, 
     #ahora mejorado para solo dibujar cuando no hay nada abajo ya dibujado, más eficiente
+        if x < self.vportx or x >= self.vportx + self.vportwidth or y < self.vporty or y >= self.vporty + self.vportheight:
+            return
+        if x >= self.width or x < 0 or y >= self.height or y < 0:
+            return
         try:
-            if (self.pixels[y][x]!=self.curr_color and self.pixels[y][x]!=color):
-                self.pixels[y][x] = color or self.curr_color
-            else:
-                pass
+            self.pixels[y][x] = color or self.curr_color
         except:
             pass
 
@@ -465,7 +474,7 @@ class Render(object):
 
                     z = Az * u + Bz * v + Cz * w
                     
-                    if z > self.zbuffer[y][x]:
+                    if z > self.zbuffer[y][x] and z <= 1 and z >= -1:
                         
                         if self.active_shader:
                         

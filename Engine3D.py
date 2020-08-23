@@ -12,12 +12,13 @@ from shaders import *
 
 #valores con los que se inicializan la ventana y viewport
 
-width=768
-height=432
+width=1000
+height=500
 
 #creacion de Window
 
 r = Render(width,height)
+r.glViewPort(200,100,600,300)
 #se carga textura
 #t = Texture('./models/model.bmp')
 #se carga modelo obj con textura, la textura no debe ir obligatoriamente
@@ -30,10 +31,23 @@ r.active_texture = Texture('./models/model.bmp')
 r.active_shader = gouraud
 
 #r.lightx, r.lighty, r.lightz=1,0,0
-posModel = ( 0, 1, 0)
+#( 3, 0, *profundidad y direccion con -*5)
+posModel = ( 0, 0, -4)
 
-r.lookAt(posModel, (-1,-1,-3))
-r.loadModel('./models/model.obj', posModel, (1,1,1),(0,0,0))
+#low angle
+#r.lookAt(posModel, (0,1,0))
+
+#hign angle
+#r.lookAt(posModel, (0,-1,0))
+
+#medium shot
+#r.lookAt(posModel, (0,0,0))
+
+#Dutch
+r.lookAt(posModel, (1,1,-2))
+
+
+r.loadModel('./models/model.obj', posModel, (1,1,1),(0,180,0))
 #r.loadModel('./models/earth.obj', (500,500,0), (1,1,1))
 
 r.glFinish('output.bmp')
