@@ -72,25 +72,60 @@ class Render(object):
     
     def createViewMatrix(self, camPosition = (0,0,0), camRotation = (0,0,0)):
         camMatrix = self.createObjectMatrix( translate = camPosition, rotate = camRotation)
-        self.viewMatrix = np.linalg.inv(matrix(camMatrix))#sustituir por mi funcion
+        #self.viewMatrix = np.linalg.inv(matrix(camMatrix))#sustituir por mi funcion
+        self.viewMatrix = camMatrix
+        """print(camMatrix)
+        print(self.viewMatrix)"""
 
-    def lookAt(self, eye, camPosition = V3(0,0,0)):
+    def lookAt(self, eye, camPosition = (0,0,0)):
 
-        forward = np.subtract(camPosition, eye)
-        forward = forward / np.linalg.norm(forward)
+        """print(camPosition)
+        print(eye)
+        print(np.subtract(camPosition, eye))
+        print("+++++++++++++++++++++")"""
+        """print("resta mia")
+        print(self.subtract(camPosition[0],eye[0],camPosition[1],eye[1],camPosition[2],eye[2]))#funciona"""
+        #forward = np.subtract(camPosition, eye)
+        pforward=self.subtract(camPosition[0],eye[0],camPosition[1],eye[1],camPosition[2],eye[2])
+        """print("resta numpy")
+        print(np.subtract(camPosition, eye))
+        print("normal")
+        print(np.linalg.norm(forward))"""
+        pforward=self.division(self.subtract(camPosition[0],eye[0],camPosition[1],eye[1],camPosition[2],eye[2]), self.frobenius(pforward))#si funciona ya
+        #forward = forward / np.linalg.norm(forward)
+        """print("resta numpy/normal")
+        print(forward)
+        print("mi forward")
+        print(pforward)"""
+        
 
+        """print("cross con numpy")
+        print(np.cross(V3(0,1,0), forward))
+        print("mi cross")
+        print(self.cross((0,1,0),forward))
         right = np.cross(V3(0,1,0), forward)
+        print("right/normal numpy")
         right = right / np.linalg.norm(right)
+        print(right)
+        print("mi version")"""
+        pright=self.division(self.cross((0,1,0),pforward), self.frobenius(pforward))
+        #print(pright)
 
-        up = np.cross(forward, right)
-        up = up / np.linalg.norm(up)
+        """up = np.cross(forward, right)
+        up = up / np.linalg.norm(up)"""
+        pup=self.cross(pforward, pright)
+        pup=self.division(pup, self.frobenius(pup))
+        #print(pup)
 
-        camMatrix = matrix([[right[0], up[0], forward[0], camPosition.x],
-                            [right[1], up[1], forward[1], camPosition.y],
-                            [right[2], up[2], forward[2], camPosition.z],
+        camMatrix = matrix([[pright[0], pup[0], pforward[0], camPosition[0]],
+                            [pright[1], pup[1], pforward[1], camPosition[1]],
+                            [pright[2], pup[2], pforward[2], camPosition[2]],
                             [0,0,0,1]])
 
-        self.viewMatrix = np.linalg.inv(camMatrix)
+        #self.viewMatrix = np.linalg.inv(camMatrix)
+        self.viewMatrix = camMatrix ##revisar
+        print(self.viewMatrix)
+        print(camMatrix)
     #Inicializa objetos internos
     def glInit(self, width, height):
         #esto se establece ahora en la funcion glCreatWindow
@@ -128,7 +163,7 @@ class Render(object):
         self.projectionMatrix = matrix([[n / r, 0, 0, 0],
                                         [0, n / t, 0, 0],
                                         [0, 0, -(f+n)/(f-n), -(2*f*n)/(f-n)],
-                                        [0, 0, -1, 0]])
+                                        [0, 0, -1, 0]]) #-------------------------------------------quitar cuando se quite @
     #cambia el color con el que se llena el mapa de bits (fondo)
     def glClearColor(self, red, green, blue):
         nred=int(255*red)
@@ -505,7 +540,7 @@ class Render(object):
         """if (pVertex!=transVertex):
             pVertex=transVertex"""
         #b=(a[2], a[1], )
-        print(transVertex)
+        #print(transVertex)
         return transVertex
 
     def dirTransform(self, vertex, vMatrix):
