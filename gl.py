@@ -429,9 +429,9 @@ class Render(object):
 
     def multiplicacionV(self, G, v, f1, c2): #función para multiplicar matrices
         result = []
-        for i in range(f1): #this loops through columns of the matrix
+        for i in range(0,f1): #this loops through columns of the matrix
             total = 0
-            for j in range(c2): #this loops through vector coordinates & rows of matrix
+            for j in range(0,c2): #this loops through vector coordinates & rows of matrix
                 total +=  v[i] *G[j][i]
             result.append(total)
         return result
@@ -448,16 +448,16 @@ class Render(object):
         a=self.multiplicacionV(vMatrix, pVertex, 4,4)
         
         transVertex = transVertex.tolist()[0]
-        pVertex=(a[2] / a[3],
+        pVertex=(a[0] / a[3],
                 a[1]/ a[3],
-                a[0] / a[3])
+                a[2] / a[3])
         transVertex = (transVertex[0] / transVertex[3],
                          transVertex[1]/ transVertex[3],
                          transVertex[2] / transVertex[3])
-        """print(transVertex)
+        print(transVertex)
         
         print(pVertex)
-        print("--------------------------")"""
+        print("--------------------------")
 
         if (pVertex!=transVertex):
             pVertex=transVertex
