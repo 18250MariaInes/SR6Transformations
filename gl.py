@@ -59,7 +59,7 @@ class Render(object):
         self.glCreateWindow(width, height)
         self.lightx=0
         self.lighty=0
-        self.lightz=-1
+        self.lightz=1
         self.active_texture = None
         self.active_texture2 = None
         self.active_shader = None
@@ -218,7 +218,7 @@ class Render(object):
     def glClear(self):
         self.pixels = [ [ self.curr_color_bg for x in range(self.width)] for y in range(self.height) ]
         #Z - buffer, depthbuffer, buffer de profudidad
-        self.zbuffer = [ [ -float('inf') for x in range(self.width)] for y in range(self.height) ]
+        self.zbuffer = [ [ float('inf') for x in range(self.width)] for y in range(self.height) ]
 
     
     #dibuja el punto en relación al viewport
@@ -474,7 +474,7 @@ class Render(object):
 
                     z = Az * u + Bz * v + Cz * w
                     
-                    if z > self.zbuffer[y][x] and z <= 1 and z >= -1:
+                    if z < self.zbuffer[y][x] and z <= 1 and z >= -1:
                         
                         if self.active_shader:
                         

@@ -26,28 +26,28 @@ r = Render(width,height)
 
 #r.loadModel('./models/objBarrel.obj', (500,500,0), (300,300,300), t)
 
-r.active_texture = Texture('./models/suit.bmp')
+r.active_texture = Texture('./models/model.bmp')
 #r.active_texture = Texture('./models/earth.bmp')
 r.active_shader = gouraud
 
 #r.lightx, r.lighty, r.lightz=1,0,0
 #( 3, 0, *profundidad y direccion con -*5)
-posModel = ( 0, -1, -5)
+posModel = ( 0, 0, -3)
 
-#low angle
+#high angle
 #r.lookAt(posModel, (0,2,0))
 
-#hign angle
+#low angle
 #r.lookAt(posModel, (0,-2,0))
 
 #medium shot
-r.lookAt(posModel, (0,0,0))
+#r.lookAt(posModel, (0,0,0))
 
 #Dutch
-#r.lookAt(posModel, (1,1,-6))
+r.lookAt(posModel, (-2,-2,-0.25))
 
 
-r.loadModel('./models/astronaute.obj', posModel, (1,1,1),(0,180,0))
+r.loadModel('./models/model.obj', posModel, (1,1,1),(0,0,0))
 #r.loadModel('./models/earth.obj', (500,500,0), (1,1,1))
 
 r.glFinish('output.bmp')
