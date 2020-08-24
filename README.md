@@ -16,4 +16,4 @@
 
 # Dutch Angle
 
-![](photoshoot/dutch_angle.jpeg)
+![](photoshoot/dutch_angle(1).jpeg)
